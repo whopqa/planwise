@@ -3,9 +3,13 @@ import {
   CATEGORIES,
   EVENTS,
   TASKS,
+  HABITS,
+  GOALS,
   type Category,
   type CalendarEvent,
   type Task,
+  type Habit,
+  type Goal,
   type EventColor,
 } from "../data/mockData";
 
@@ -22,6 +26,13 @@ interface DataContextType {
   addTask: (task: Omit<Task, "id">) => void;
   updateTask: (id: number, task: Partial<Task>) => void;
   deleteTask: (id: number) => void;
+  habits: Habit[];
+  updateHabit: (id: number, habit: Partial<Habit>) => void;
+  toggleHabitDate: (id: number, dateStr: string) => void;
+  goals: Goal[];
+  updateGoal: (id: number, goal: Partial<Goal>) => void;
+  language: "vi" | "en";
+  toggleLanguage: () => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -30,6 +41,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [categories, setCategories] = useState<Category[]>(CATEGORIES);
   const [events, setEvents] = useState<CalendarEvent[]>(EVENTS);
   const [tasks, setTasks] = useState<Task[]>(TASKS);
+  const [habits, setHabits] = useState<Habit[]>(HABITS);
+  const [goals, setGoals] = useState<Goal[]>(GOALS);
+  const [language, setLanguage] = useState<"vi" | "en">("vi");
+
+  const toggleLanguage = () => {
+    setLanguage(prev => prev === "vi" ? "en" : "vi");
+  };
 
   const addCategory = (category: Omit<Category, "id">) => {
     const newCategory = { ...category, id: Date.now() };
@@ -92,12 +110,36 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setTasks((prev) => prev.filter((task) => task.id !== id));
   };
 
+  const updateHabit = (id: number, updates: Partial<Habit>) => {
+    setHabits(prev => prev.map(h => h.id === id ? { ...h, ...updates } : h));
+  };
+
+  const toggleHabitDate = (id: number, dateStr: string) => {
+    setHabits(prev => prev.map(habit => {
+      if (habit.id === id) {
+        const completedDates = habit.completedDates.includes(dateStr) 
+          ? habit.completedDates.filter(d => d !== dateStr) 
+          : [...habit.completedDates, dateStr];
+        return { ...habit, completedDates };
+      }
+      return habit;
+    }));
+  };
+
+  const updateGoal = (id: number, updates: Partial<Goal>) => {
+    setGoals(prev => prev.map(g => g.id === id ? { ...g, ...updates } : g));
+  };
+
   return (
     <DataContext.Provider
       value={{
         categories,
         events,
         tasks,
+        habits,
+        goals,
+        language,
+        toggleLanguage,
         addCategory,
         updateCategory,
         deleteCategory,
@@ -107,6 +149,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
         addTask,
         updateTask,
         deleteTask,
+        updateHabit,
+        toggleHabitDate,
+        updateGoal,
       }}
     >
       {children}

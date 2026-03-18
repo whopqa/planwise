@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, LineChart, Line, AreaChart, Area } from "recharts";
@@ -42,10 +42,16 @@ export function ReviewView() {
               <BookOpen className="w-5 h-5 text-indigo-500" />
               Nhật ký cuối ngày
             </CardTitle>
+            <CardDescription>
+              Điền lần lượt 3 mục để nhìn lại kết quả trong ngày, nhận diện điểm nghẽn và chốt hành động cho ngày mai.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Hôm nay mình đã hoàn thành gì?</label>
+              <p className="text-xs text-muted-foreground">
+                Dùng mục này để ghi lại việc đã xong, kể cả các bước nhỏ, nhằm thấy rõ tiến độ thực tế của bạn.
+              </p>
               <Textarea 
                 placeholder="Ghi lại những thành tựu dù là nhỏ nhất..." 
                 value={todayReflection.completed}
@@ -55,6 +61,9 @@ export function ReviewView() {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Điều gì làm mình trì hoãn?</label>
+              <p className="text-xs text-muted-foreground">
+                Hãy viết cụ thể nguyên nhân khiến bạn chậm lại để dễ nhận ra thói quen hoặc bối cảnh cần điều chỉnh.
+              </p>
               <Textarea 
                 placeholder="Mạng xã hội, thiếu năng lượng, v.v." 
                 value={todayReflection.obstacles}
@@ -64,6 +73,9 @@ export function ReviewView() {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Cải thiện gì cho ngày mai?</label>
+              <p className="text-xs text-muted-foreground">
+                Chốt 1-2 việc thật rõ ràng, dễ làm ngay vào ngày mai để biến rút kinh nghiệm thành hành động.
+              </p>
               <Textarea 
                 placeholder="Hành động cụ thể để làm tốt hơn..." 
                 value={todayReflection.improvements}
@@ -86,6 +98,9 @@ export function ReviewView() {
                 <CheckCircle2 className="w-5 h-5 text-emerald-500" />
                 Task hoàn thành tuần này
               </CardTitle>
+              <CardDescription>
+                Biểu đồ này cho biết ngày nào bạn xử lý được nhiều việc nhất để dễ so sánh nhịp làm việc trong tuần.
+              </CardDescription>
             </CardHeader>
             <CardContent className="h-48 pt-0">
               <ResponsiveContainer width="100%" height="100%">
@@ -106,6 +121,9 @@ export function ReviewView() {
                 <Activity className="w-5 h-5 text-orange-500" />
                 Thời gian tập trung (phút)
               </CardTitle>
+              <CardDescription>
+                Dùng để đối chiếu thời lượng làm việc sâu với số task hoàn thành, từ đó biết ngày nào bạn tập trung hiệu quả.
+              </CardDescription>
             </CardHeader>
             <CardContent className="h-48 pt-0">
               <ResponsiveContainer width="100%" height="100%">
@@ -136,6 +154,9 @@ export function ReviewView() {
               <TrendingUp className="w-5 h-5 text-purple-500" />
               Biến động năng lượng (1-10)
             </CardTitle>
+            <CardDescription>
+              Theo dõi cảm giác năng lượng từng ngày để tìm ra thời điểm và nhịp làm việc phù hợp với bản thân.
+            </CardDescription>
           </CardHeader>
           <CardContent className="h-64 pt-0">
             <ResponsiveContainer width="100%" height="100%">
@@ -153,6 +174,9 @@ export function ReviewView() {
         <Card>
           <CardHeader>
             <CardTitle>Lịch sử nhật ký</CardTitle>
+            <CardDescription>
+              Mỗi thẻ lưu lại 3 phần: việc đã làm, điểm gây trì hoãn và hướng cải thiện để bạn nhìn ra mẫu lặp theo thời gian.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4 max-h-[250px] overflow-y-auto pr-2">

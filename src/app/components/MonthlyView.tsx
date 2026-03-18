@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import { ChevronLeft, ChevronRight, Plus, X, Clock, MapPin, Tag, Edit2 } from "lucide-react";
 import { useData } from "../context/DataContext";
 import { COLOR_MAP, DAYS, getTimeString, type CalendarEvent } from "../data/mockData";
+import { HintBubble } from "./HintBubble";
 
 // March 2026: starts on Sunday (0), 31 days
 const MONTH_START_DAY = 0; // Sunday
@@ -134,7 +136,8 @@ function DayDetailPanel({ date, events, onClose, onEditEvent }: DayDetailPanelPr
 }
 
 export function MonthlyView() {
-  const { events } = useData();
+  const { events, language, updateEvent } = useData();
+  const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState<number | null>(null);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
 
@@ -145,35 +148,58 @@ export function MonthlyView() {
   const selectedEvents = selectedDate ? getEventsForDate(selectedDate, events) : [];
 
   return (
-    <div className="flex flex-col h-full bg-white">
-      {/* Header */}
-      <div className="border-b border-gray-100 px-6 py-3.5 flex items-center justify-between flex-shrink-0">
+    <div className="flex flex-col h-full bg-white dark:bg-slate-950">
+      <div className="border-b border-gray-100 px-6 py-3.5 flex items-center justify-between flex-shrink-0 dark:border-slate-800 dark:bg-slate-950">
         <div>
-          <h1 className="text-gray-900">Lịch tháng</h1>
-          <p className="text-xs text-gray-400 mt-0.5">{MONTH_NAME}</p>
+          <h1 className="text-gray-900 font-bold text-xl dark:text-slate-50">{language === 'vi' ? "Lịch tháng" : "Monthly Calendar"}</h1>
+          <p className="text-xs text-gray-400 mt-0.5 dark:text-slate-300">{language === 'vi' ? MONTH_NAME : "March 2026"}</p>
         </div>
         <div className="flex items-center gap-2">
-          <button className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 transition-colors">
-            <ChevronLeft size={17} />
-          </button>
-          <button className="px-3 py-1.5 text-xs border border-indigo-200 text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors font-medium">
-            Tháng này
-          </button>
-          <button className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 transition-colors">
-            <ChevronRight size={17} />
-          </button>
+          <div className="flex items-center bg-gray-100 rounded-xl p-1 gap-0.5 dark:bg-slate-800">
+            <button 
+              onClick={() => navigate('/timetable')}
+              className="px-3 py-1.5 rounded-lg text-xs text-gray-400 hover:text-gray-600 transition-colors cursor-pointer dark:text-slate-300 dark:hover:text-slate-100">
+              {language === 'vi' ? "Tuần" : "Week"}
+            </button>
+            <button className="px-3 py-1.5 rounded-lg text-xs bg-white shadow-sm text-gray-700 font-medium dark:bg-slate-900 dark:text-slate-100">
+              {language === 'vi' ? "Tháng" : "Month"}
+            </button>
+          </div>
+          <div className="flex items-center gap-1">
+            <button className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 transition-colors dark:text-slate-300 dark:hover:bg-slate-800">
+              <ChevronLeft size={17} />
+            </button>
+            <button className="px-3 py-1.5 text-xs border border-indigo-200 text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors font-medium dark:border-indigo-400/30 dark:bg-indigo-500/10 dark:text-indigo-200 dark:hover:bg-indigo-500/20">
+              {language === 'vi' ? "Tháng này" : "This Month"}
+            </button>
+            <button className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 transition-colors dark:text-slate-300 dark:hover:bg-slate-800">
+              <ChevronRight size={17} />
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Calendar */}
-      <div className="flex-1 overflow-hidden p-4">
-        <div className="h-full flex flex-col bg-gray-50 rounded-2xl border border-gray-100 overflow-hidden">
+      <div className="flex-1 overflow-hidden p-4 flex flex-col min-h-0">
+        <HintBubble
+          id="monthly_calendar_intro"
+          title={language === "vi" ? "Lịch tháng" : "Monthly Calendar"}
+          color="violet"
+          persistent={false}
+          className="mb-4"
+        >
+          {language === "vi"
+            ? "Mục này cho bạn góc nhìn theo tháng để thấy ngày nào dày lịch, ngày nào còn trống. Nhấp vào từng ngày để xem chi tiết và kéo sự kiện sang ngày khác khi cần."
+            : "Use the monthly view to spot busy days, open day details, and reschedule events across the month."}
+        </HintBubble>
+
+        <div className="flex-1 min-h-0 flex flex-col bg-gray-50 rounded-2xl border border-gray-100 overflow-hidden dark:bg-slate-900 dark:border-slate-800">
           {/* Week headers */}
-          <div className="grid grid-cols-7 border-b border-gray-100 bg-white">
+          <div className="grid grid-cols-7 border-b border-gray-100 bg-white dark:border-slate-800 dark:bg-slate-900">
             {WEEK_HEADERS_VI.map((day) => (
               <div
                 key={day}
-                className="text-center py-3 text-[11px] text-gray-400 uppercase tracking-wider font-semibold"
+                className="text-center py-3 text-[11px] text-gray-400 uppercase tracking-wider font-semibold dark:text-slate-300"
               >
                 {day}
               </div>
@@ -181,10 +207,10 @@ export function MonthlyView() {
           </div>
 
           {/* Calendar grid */}
-          <div className="flex-1 grid grid-cols-7 grid-rows-5 gap-px bg-gray-200 overflow-hidden">
+          <div className="flex-1 grid grid-cols-7 grid-rows-5 gap-px bg-gray-200 overflow-hidden dark:bg-slate-800">
             {cells.map((date, idx) => {
               if (date === null) {
-                return <div key={`empty-${idx}`} className="bg-white" />;
+                return <div key={`empty-${idx}`} className="bg-white dark:bg-slate-900/60" />;
               }
 
               const dateEvents = getEventsForDate(date, events);
@@ -193,23 +219,35 @@ export function MonthlyView() {
               return (
                 <div
                   key={date}
-                  className={`bg-white p-2 flex flex-col cursor-pointer transition-all hover:bg-gray-50 ${
-                    isToday ? "ring-2 ring-inset ring-indigo-500" : ""
+                  className={`bg-white p-2 flex flex-col cursor-pointer transition-all hover:bg-gray-50 dark:bg-slate-900 dark:hover:bg-slate-800/80 ${
+                    isToday ? "ring-2 ring-inset ring-indigo-500 dark:ring-indigo-400" : ""
                   }`}
                   onClick={() => setSelectedDate(date)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    const eventId = Number(e.dataTransfer.getData('eventId'));
+                    if (eventId) {
+                      e.stopPropagation();
+                      const dow = (MONTH_START_DAY + date - 1) % 7;
+                      const dayName = Object.keys(DAY_TO_DOW).find((k) => DAY_TO_DOW[k] === dow);
+                      if (dayName) {
+                        updateEvent(eventId, { day: dayName.slice(0, 3) });
+                      }
+                    }
+                  }}
                 >
                   {/* Date number */}
                   <div className="flex items-center justify-between mb-1">
                     <span
                       className={`
                         text-sm font-medium inline-flex items-center justify-center w-6 h-6 rounded-full
-                        ${isToday ? "bg-indigo-600 text-white" : "text-gray-700"}
+                        ${isToday ? "bg-indigo-600 text-white dark:bg-indigo-500" : "text-gray-700 dark:text-slate-100"}
                       `}
                     >
                       {date}
                     </span>
                     {dateEvents.length > 0 && (
-                      <span className="text-[9px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">
+                      <span className="text-[9px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full dark:bg-slate-800 dark:text-slate-300">
                         {dateEvents.length}
                       </span>
                     )}
@@ -222,15 +260,20 @@ export function MonthlyView() {
                       return (
                         <div
                           key={event.id}
-                          className={`text-[9px] px-1.5 py-0.5 rounded truncate ${colors.badge}`}
+                          className={`text-[9px] px-1.5 py-0.5 rounded truncate cursor-grab active:cursor-grabbing ${colors.badge}`}
                           title={event.title}
+                          draggable
+                          onDragStart={(e) => {
+                            e.stopPropagation();
+                            e.dataTransfer.setData('eventId', event.id.toString());
+                          }}
                         >
                           {event.title}
                         </div>
                       );
                     })}
                     {dateEvents.length > 3 && (
-                      <div className="text-[9px] text-gray-400 px-1.5">+{dateEvents.length - 3} khác</div>
+                      <div className="text-[9px] text-gray-400 px-1.5 dark:text-slate-300">+{dateEvents.length - 3} khác</div>
                     )}
                   </div>
                 </div>

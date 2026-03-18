@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router";
 import { ChevronLeft, ChevronRight, Plus, MapPin, Clock, X, Tag, Edit2, Trash2, Bot, Brain } from "lucide-react";
 import { useData } from "../context/DataContext";
+import { HintBubble } from "./HintBubble";
 import {
   DAYS,
   DAYS_VI,
@@ -12,9 +14,9 @@ import {
   type EventColor,
 } from "../data/mockData";
 
-const START_HOUR = 7;
-const END_HOUR = 21;
-const HOUR_HEIGHT = 68;
+const START_HOUR = 0;   // midnight
+const END_HOUR = 24;    // up to 23:xx shown
+const HOUR_HEIGHT = 72; // px per hour — tall enough for 30-min events
 const hours = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => START_HOUR + i);
 
 function formatHourLabel(hour: number) {
@@ -31,28 +33,33 @@ interface EventCardProps {
 function EventCard({ event, onClick }: EventCardProps) {
   const colors = COLOR_MAP[event.color];
   const topPx = (event.startHour - START_HOUR + event.startMin / 60) * HOUR_HEIGHT + 2;
-  const heightPx = event.duration * HOUR_HEIGHT - 4;
-  const showLocation = heightPx > 48;
-  const showTime = heightPx > 36;
+  // Minimum height = 22px so even 5-min events are always visible
+  const heightPx = Math.max(22, event.duration * HOUR_HEIGHT - 4);
+  const showLocation = heightPx > 52;
+  const showTime    = heightPx > 30;
 
   return (
     <div
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData('eventId', event.id.toString());
+      }}
       onClick={() => onClick(event)}
-      title={event.title}
+      title={`${event.title} — ${event.startHour}:${String(event.startMin).padStart(2,'0')}`}
       className={`
-        absolute inset-x-1 rounded-md px-2 py-1.5 cursor-pointer overflow-hidden
+        absolute inset-x-0.5 rounded-md px-2 py-1 cursor-pointer overflow-hidden
         border-l-[3px] ${colors.light} ${colors.border}
         hover:brightness-95 active:scale-[0.99] transition-all duration-100 shadow-sm hover:shadow
       `}
-      style={{ top: `${topPx}px`, height: `${heightPx}px` }}
+      style={{ top: `${topPx}px`, height: `${heightPx}px`, minHeight: '22px' }}
     >
       <p className={`text-[11px] font-semibold leading-tight truncate ${colors.text}`}>{event.title}</p>
       {showTime && (
         <p className={`text-[10px] leading-tight mt-0.5 opacity-70 truncate ${colors.text}`}>
-          {event.startHour}:{String(event.startMin).padStart(2, "0")}
+          {event.startHour}:{String(event.startMin).padStart(2, '0')}
         </p>
       )}
-      {showLocation && (
+      {showLocation && event.location && (
         <p className={`text-[10px] leading-tight opacity-60 truncate flex items-center gap-0.5 ${colors.text}`}>
           <MapPin size={7} className="flex-shrink-0" />
           {event.location}
@@ -261,16 +268,17 @@ function EventModal({ event, onClose, onSave, onDelete }: EventModalProps) {
 }
 
 export function WeeklyView() {
-  const { events, addEvent, updateEvent, deleteEvent } = useData();
+  const { events, addEvent, updateEvent, deleteEvent, language } = useData();
+  const navigate = useNavigate();
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [coachState, setCoachState] = useState<'idle' | 'suggesting' | 'processing' | 'done'>('idle');
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Focus directly to 8:00 AM on mount
+  // Scroll to 7 AM on mount so user lands near start of work day
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = 0; // Show from the top (7:00) so 8:00 is clearly visible
+      scrollRef.current.scrollTop = 7 * HOUR_HEIGHT; // 7 * 72 = 504px from midnight
     }
   }, []);
 
@@ -366,55 +374,89 @@ export function WeeklyView() {
         </div>
       )}
       {/* Header */}
-      <div className="border-b border-gray-100 px-6 py-3.5 flex items-center justify-between flex-shrink-0 bg-white">
-        <div>
-          <h1 className="text-gray-900">Lịch tuần</h1>
-          <p className="text-xs text-gray-400 mt-0.5">9 – 15 tháng 3, 2026</p>
+      <div className="border-b border-gray-100 px-4 sm:px-6 py-3 flex items-center justify-between flex-shrink-0 bg-white gap-3 flex-wrap">
+        <div className="min-w-0">
+          <h1 className="text-gray-900 font-bold text-lg sm:text-xl leading-tight">
+            {language === 'vi' ? 'Lịch tuần' : 'Weekly Schedule'}
+          </h1>
+          <p className="text-xs text-gray-400 mt-0.5 hidden sm:block">
+            {language === 'vi' ? '9 – 15 tháng 3, 2026' : 'March 9 – 15, 2026'}
+          </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Week / Month toggle */}
           <div className="flex items-center bg-gray-100 rounded-xl p-1 gap-0.5">
-            <button className="px-3 py-1.5 rounded-lg text-xs bg-white shadow-sm text-gray-700 font-medium">
-              Tuần
+            <button className="px-3 py-1.5 rounded-lg text-xs bg-white shadow-sm text-gray-700 font-semibold">
+              {language === 'vi' ? 'Tuần' : 'Week'}
             </button>
-            <button className="px-3 py-1.5 rounded-lg text-xs text-gray-400 hover:text-gray-600 transition-colors">
-              Ngày
+            <button
+              onClick={() => navigate('/calendar')}
+              className="px-3 py-1.5 rounded-lg text-xs text-gray-400 hover:text-gray-600 transition-colors cursor-pointer font-medium"
+            >
+              {language === 'vi' ? 'Tháng' : 'Month'}
             </button>
           </div>
+          {/* Prev / Today / Next */}
           <div className="flex items-center gap-1">
             <button className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 transition-colors">
-              <ChevronLeft size={17} />
+              <ChevronLeft size={16} />
             </button>
-            <button className="px-3 py-1.5 text-xs border border-indigo-200 text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors font-medium">
-              Hôm nay
+            <button className="px-3 py-1.5 text-xs border border-indigo-200 text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors font-semibold">
+              {language === 'vi' ? 'Hôm nay' : 'Today'}
             </button>
             <button className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 transition-colors">
-              <ChevronRight size={17} />
+              <ChevronRight size={16} />
             </button>
           </div>
+          {/* Add event */}
           <button
             onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 text-white rounded-xl text-xs hover:bg-indigo-700 transition-colors shadow-sm shadow-indigo-200"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl text-xs font-semibold hover:from-indigo-700 hover:to-violet-700 transition-all shadow-sm shadow-indigo-200"
           >
             <Plus size={14} />
-            Thêm sự kiện
+            <span className="hidden sm:inline">{language === 'vi' ? 'Thêm sự kiện' : 'Add Event'}</span>
+            <span className="sm:hidden">+</span>
           </button>
         </div>
       </div>
 
       {/* Calendar grid */}
-      <div className="flex-1 overflow-hidden flex flex-col">
-        {/* Day headers */}
+      <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+        <div className="px-4 sm:px-6 pt-4 bg-white border-b border-gray-100">
+          <HintBubble
+            id="weekly_timetable_intro"
+            title={language === "vi" ? "Lịch tuần" : "Weekly Schedule"}
+            color="indigo"
+            persistent={false}
+            className="mb-4"
+          >
+            {language === "vi"
+              ? "Đây là nơi bạn sắp xếp tuần làm việc theo từng khung giờ. Bạn có thể thêm sự kiện, kéo thả để đổi ngày và nhìn nhanh chỗ nào trong tuần đang quá tải hoặc còn trống."
+              : "Plan your week by time blocks, add events, and drag them across days as needed."}
+          </HintBubble>
+        </div>
+
+        {/* Day header row — responsive: show short labels on small screens */}
         <div className="flex border-b border-gray-100 bg-white flex-shrink-0">
-          <div className="w-14 flex-shrink-0" />
+          {/* Time gutter */}
+          <div className="w-12 sm:w-16 flex-shrink-0" />
           {DAYS.map((day, i) => (
-            <div key={day} className={`flex-1 text-center py-2.5 ${i < DAYS.length - 1 ? "border-r border-gray-50" : ""}`}>
-              <div className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold">{DAYS_VI[i]}</div>
+            <div
+              key={day}
+              className={`flex-1 text-center py-2 sm:py-2.5 min-w-0 ${
+                i < DAYS.length - 1 ? 'border-r border-gray-50' : ''
+              }`}
+            >
+              <div className="text-[9px] sm:text-[10px] text-gray-400 uppercase tracking-widest font-bold">
+                {DAYS_VI[i]}
+              </div>
               <div
                 className={`
-                  inline-flex items-center justify-center w-7 h-7 rounded-full mt-1 text-xs font-medium
-                  ${i === TODAY_INDEX
-                    ? "bg-indigo-600 text-white shadow-sm shadow-indigo-300"
-                    : "text-gray-500 hover:bg-gray-100 cursor-pointer transition-colors"
+                  inline-flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-full mt-1 text-[11px] sm:text-xs font-semibold
+                  ${
+                    i === TODAY_INDEX
+                      ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-300'
+                      : 'text-gray-500 hover:bg-gray-100 cursor-pointer transition-colors'
                   }
                 `}
               >
@@ -424,19 +466,22 @@ export function WeeklyView() {
           ))}
         </div>
 
-        {/* Scrollable time grid */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto">
+        {/* Scrollable time grid — overflow-y-auto here, NOT on children */}
+        <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-auto">
           <div
             className="flex relative"
-            style={{ height: `${(END_HOUR - START_HOUR) * HOUR_HEIGHT}px` }}
+            style={{
+              height: `${(END_HOUR - START_HOUR) * HOUR_HEIGHT}px`,
+              minWidth: '520px', // prevents columns from collapsing on very narrow screens
+            }}
           >
             {/* Time column */}
-            <div className="w-14 flex-shrink-0 relative">
+            <div className="w-12 sm:w-16 flex-shrink-0 relative">
               {hours.map((hour) => (
                 <div
                   key={hour}
-                  className="absolute right-3 text-[10px] text-gray-300 font-medium"
-                  style={{ top: `${(hour - START_HOUR) * HOUR_HEIGHT - 6}px` }}
+                  className="absolute right-2 sm:right-3 text-[9px] sm:text-[10px] text-gray-400 font-semibold select-none"
+                  style={{ top: `${(hour - START_HOUR) * HOUR_HEIGHT - 7}px` }}
                 >
                   {formatHourLabel(hour)}
                 </div>
@@ -455,6 +500,17 @@ export function WeeklyView() {
                     flex-1 relative border-l border-gray-50
                     ${isToday ? "bg-indigo-50/20" : ""}
                   `}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    const eventId = Number(e.dataTransfer.getData('eventId'));
+                    if (eventId) {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const y = e.clientY - rect.top;
+                      const hourDropped = START_HOUR + Math.floor(y / HOUR_HEIGHT);
+                      const finalHour = Math.min(END_HOUR - 1, Math.max(START_HOUR, hourDropped));
+                      updateEvent(eventId, { day, startHour: finalHour, startMin: 0 });
+                    }
+                  }}
                 >
                   {/* Hour gridlines */}
                   {hours.map((hour) => (
